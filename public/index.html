@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Carrito Redis 🛒</title>
+  <script src="https://cdn.tailwindcss.com"></script> <!-- Incluir Tailwind -->
+</head>
+
+<body class="bg-gray-50 font-sans text-gray-800 flex flex-col items-center justify-center min-h-screen">
+
+  <!-- Título -->
+  <h1 class="text-4xl font-bold mb-6">Carrito de Compras 🛒</h1>
+
+  <!-- Usuario -->
+  <h2 id="usuario" class="text-xl text-gray-700 mb-4"></h2>
+
+  <!-- Formulario de agregar producto -->
+  <div class="flex flex-col items-center mb-6">
+    <input id="productoId" placeholder="ID del Producto" class="mb-2 px-4 py-2 border border-gray-300 rounded-lg w-72" />
+    <input id="cantidad" type="number" placeholder="Cantidad" class="mb-4 px-4 py-2 border border-gray-300 rounded-lg w-72" />
+    <button onclick="agregarProducto()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">Agregar al Carrito</button>
+  </div>
+
+  <!-- Mostrar carrito -->
+  <div class="mb-6 w-72">
+    <h2 class="text-xl text-gray-700 mb-2">Mi Carrito:</h2>
+    <ul id="carrito-lista" class="bg-white p-4 rounded-lg shadow-md space-y-4 text-sm">
+      <!-- Los productos se agregarán aquí -->
+    </ul>
+    <pre id="carrito" class="mt-4 bg-white p-4 rounded-lg shadow-md text-sm hidden"></pre> <!-- JSON oculto -->
+  </div>
+
+  <!-- Botones de acción -->
+  <div class="flex gap-4 mb-6">
+    <button onclick="verCarrito()" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition">Actualizar Carrito</button>
+    <button onclick="vaciarCarrito()" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition">Vaciar Carrito</button>
+  </div>
+
+  <script>
+    // Genera un ID de usuario aleatorio si no existe en localStorage
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+      userId = `user-${Math.floor(Math.random() * 1000000)}`;
+      localStorage.setItem('userId', userId);
+    }
+
+    async function agregarProducto() {
+      const productoId = document.getElementById('productoId').value;
+      const cantidad = parseInt(document.getElementById('cantidad').value, 10);
+
+      if (!productoId || isNaN(cantidad) || cantidad <= 0) {
+        alert('Por favor ingrese un ID de producto válido y una cantidad mayor que cero.');
+        return;
+      }
+
+      await fetch(`/api/carrito/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productoId, cantidad })
+      });
+
+      verCarrito();
+    }
+
+    async function verCarrito() {
+      const res = await fetch(`/api/carrito/${userId}`);
+      if (!res.ok) {
+        alert('Error al cargar el carrito.');
+        return;
+      }
+    
+      const data = await res.json();
+    
+      // Verificar que 'data' es un objeto
+      if (typeof data !== 'object' || data === null) {
+        alert('El carrito no es un objeto. Verifica la respuesta del servidor.');
+        console.error('Respuesta del carrito:', data);
+        return;
+      }
+    
+      // Mostrar carrito como lista
+      const carritoLista = document.getElementById('carrito-lista');
+      carritoLista.innerHTML = ''; // Limpiar el carrito
+    
+      if (Object.keys(data).length === 0) {
+        carritoLista.innerHTML = '<li class="text-gray-500">El carrito está vacío.</li>';
+      } else {
+        // Iterar sobre las claves del objeto para mostrar los productos
+        for (const productoId in data) {
+          if (data.hasOwnProperty(productoId)) {
+            const cantidad = data[productoId];
+            const li = document.createElement('li');
+            li.classList.add('flex', 'justify-between', 'items-center', 'p-2', 'bg-gray-100', 'rounded-lg');
+            li.innerHTML = `<span>Producto ID: ${productoId}</span><span>Cantidad: ${cantidad}</span>`;
+            carritoLista.appendChild(li);
+          }
+        }
+      }
+    
+      // Mostrar JSON al final
+      const carritoJson = document.getElementById('carrito');
+      carritoJson.textContent = JSON.stringify(data, null, 2);
+      carritoJson.classList.remove('hidden');
+    }
+    
+
+    async function vaciarCarrito() {
+      await fetch(`/api/carrito/${userId}`, { method: 'DELETE' });
+      verCarrito();
+    }
+
+    async function verUsuario() {
+      let userId = localStorage.getItem('userId');
+      document.getElementById('usuario').textContent = `Usuario: ${userId}`;
+    }
+
+    verUsuario();
+    verCarrito();
+  </script>
+</body>
+
+</html>
