@@ -23,8 +23,8 @@ Sigue estos pasos para poner en marcha el proyecto en tu máquina local:
 ### 1. Clona el repositorio:
 
 ```bash
-git clone https://github.com/tu-usuario/carrito-redis.git
-cd carrito-redis
+git clone https://github.com/brunofnz/redis-carrito
+cd redis-carrito
 ```
 
 ### 2. Instala las dependencias:
